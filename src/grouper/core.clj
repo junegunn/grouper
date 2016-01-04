@@ -3,10 +3,16 @@
   (:import [java.util.concurrent ArrayBlockingQueue ExecutorService TimeUnit]
            java.util.ArrayList))
 
+(deftype Request
+  [object
+   ^clojure.lang.IDeref promise
+   ^clojure.lang.IFn    callback
+   ^clojure.lang.IFn    errback])
+
 (definterface IGrouper
   (^grouper.core.IGrouper start     [body])
   (^boolean               isRunning [])
-  (^clojure.lang.IDeref   submit    [req])
+  (^clojure.lang.IDeref   submit    [^grouper.core.Request req])
   (^void                  sleep     [interval])
   (^void                  wakeUp    []))
 
@@ -29,7 +35,7 @@
     (when-not (.offer queue req)
       (.wakeUp this)
       (.put queue req))
-    (:promise req))
+    (.promise req))
   (sleep [this interval]
     (locking this
       (when-not notified
@@ -56,18 +62,18 @@
   [proc-fn requests]
   (fn []
     (try
-      (let [results   (proc-fn (map :object requests))
+      (let [results   (proc-fn (map (fn [^Request req] (.object req)) requests))
             results   (if (coll? results) results (repeat results))
             ;; Pad the result sequence with nils
             n-results (take (count requests)
                             (concat results (repeat nil)))]
-        (doseq [[request result] (map vector requests n-results)]
-          ((:callback request) result)
-          (deliver (:promise request) result)))
+        (doseq [[^Request request result] (map vector requests n-results)]
+          ((.callback request) result)
+          (deliver (.promise request) result)))
       (catch Exception e
-        (doseq [request requests]
-          ((:errback request) e)
-          (deliver (:promise request) e))))))
+        (doseq [^Request request requests]
+          ((.errback request) e)
+          (deliver (.promise request) e))))))
 
 (defn start!
   "Creates Grouper and starts the dispatcher thread.
@@ -117,8 +123,7 @@
            :or   {callback identity
                   errback  identity}}]
   {:pre [(fn? callback) (fn? errback)]}
-  (let [req {:object   elem     :promise (promise)
-             :callback callback :errback errback}]
+  (let [req (->Request elem (promise) callback errback)]
     (.submit grouper req)))
 
 (defn shutdown!
