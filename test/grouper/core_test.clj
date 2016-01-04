@@ -9,11 +9,11 @@
     (is (thrown? AssertionError (grouper/start! "not-fun")))
     (is (thrown? AssertionError (grouper/start! #(%))))
     (is (thrown? AssertionError
-                 (grouper/start! identity :queue 1000 :unknown true)))
+                 (grouper/start! identity :capacity 1000 :unknown true)))
     (is (thrown? AssertionError
-                 (grouper/start! identity :queue 1000 :pool "thread-pool")))
+                 (grouper/start! identity :capacity 1000 :pool "thread-pool")))
     (is (thrown? AssertionError
-                 (grouper/start! identity :queue 1000 :interval -1))))
+                 (grouper/start! identity :capacity 1000 :interval -1))))
 
   (testing "should implement Autocloseable interface"
     (let [c (atom 0)]
@@ -21,7 +21,7 @@
                       (fn [items]
                         (apply swap! c + items)
                         (repeat :increased))
-                      :queue 10
+                      :capacity 10
                       :interval 10)]
         (grouper/submit! g 1)
         (is (= :increased @(grouper/submit! g 2))))
@@ -29,7 +29,7 @@
 
   (testing "submit! should return promise"
     (with-open [g (grouper/start! #(map inc %)
-                                  :queue 10
+                                  :capacity 10
                                   :interval 10)]
       (let [p (grouper/submit! g 1)]
         (is (instance? clojure.lang.IDeref p))
@@ -39,7 +39,7 @@
     (let [a (atom [])
           e (atom [])]
       (with-open [g (grouper/start! #(map str/upper-case %)
-                                    :queue 2 ; FIXME
+                                    :capacity 2 ; FIXME
                                     :interval 10)]
         (doseq [val ["hello" nil "world"]]
           (grouper/submit! g val
@@ -51,19 +51,19 @@
   (testing "not allowed to submit more items after closed"
     (doseq [close-fn [#(.close %)
                       grouper/shutdown!]]
-      (let [g (grouper/start! identity :queue 100)]
+      (let [g (grouper/start! identity :capacity 100)]
         (grouper/submit! g 1)
         (close-fn g)
         (is (thrown-with-msg?
               RuntimeException #"is closed" (grouper/submit! g 2))))))
 
   (testing "the function is supposed to return a collection"
-    (with-open [g (grouper/start! #(map inc %) :queue 100 :interval 10)]
+    (with-open [g (grouper/start! #(map inc %) :capacity 100 :interval 10)]
       (is (= 1 @(grouper/submit! g 0)))
       (is (= 2 @(grouper/submit! g 1)))))
 
   (testing "or it can return a value that is repeated for all requests"
-    (with-open [g (grouper/start! (fn [_] 100) :queue 100 :interval 10)]
+    (with-open [g (grouper/start! (fn [_] 100) :capacity 100 :interval 10)]
       (is (= 100 @(grouper/submit! g 0)))
       (is (= 100 @(grouper/submit! g 1)))))
 
@@ -72,7 +72,7 @@
       (with-open [g (grouper/start!
                       (fn [_]
                         (swap! threads conj (Thread/currentThread)))
-                      :queue 1)]
+                      :capacity 1)]
         (dotimes [n 4] (grouper/submit! g n)))
       (is (= 1 (count @threads)))))
 
@@ -82,6 +82,6 @@
                       (fn [_]
                         (Thread/sleep 10)
                         (swap! threads conj (Thread/currentThread)))
-                      :queue 1 :pool 8)]
+                      :capacity 1 :pool 8)]
         (dotimes [n 4] (grouper/submit! g n)))
       (is (= 4 (count @threads))))))

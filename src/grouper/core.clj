@@ -1,7 +1,7 @@
 (ns grouper.core
   "Provides asynchronous batch processing facility."
   (:import [java.util.concurrent ArrayBlockingQueue ExecutorService TimeUnit]
-           [java.util AbstractQueue ArrayList]))
+           java.util.ArrayList))
 
 (definterface IGrouper
   (^grouper.core.IGrouper start     [body])
@@ -77,22 +77,19 @@
   a single value, that value is repetedly delievered to the promises.
 
   Accepts the following options:
-    :queue    - Size of request queue or java.util.AbstractQueue instance
+    :capacity - Size of request queue
     :interval - Batch processing interval
     :pool     - Number of threads or java.util.concurrent.ExecutorService instance"
   [proc-fn & {:as options}]
   {:pre [(fn? proc-fn)
-         (every? #{:queue :interval :pool} (keys options))
-         (some #(% (:queue options))
-               [(every-pred integer? pos?) #(instance? AbstractQueue %)])
+         (every? #{:capacity :interval :pool} (keys options))
+         ((every-pred integer? pos?) (:capacity options))
          (some #(% (:interval options))
                [nil? (every-pred integer? pos?)])
          (some #(% (:pool options))
                [nil? (every-pred integer? pos?) #(instance? ExecutorService %)])]}
-  (let [{:keys  [queue interval pool]} options
-        queue   (if (integer? queue)
-                  (ArrayBlockingQueue. queue)
-                  queue)
+  (let [{:keys  [capacity interval pool]} options
+        queue   (ArrayBlockingQueue. capacity)
         pool    (if (integer? pool)
                   (java.util.concurrent.Executors/newFixedThreadPool pool)
                   pool)

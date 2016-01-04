@@ -87,9 +87,8 @@ you from the hassle.
            (db-insert items))
 
          ;; Size of the internal request queue. If the queue becomes full,
-         ;; queued requests are processed immediately. You can alternatively
-         ;; provide a java.util.AbstractQueue instance.
-         :queue 10000
+         ;; queued requests are processed immediately.
+         :capacity 10000
 
          ;; (Optional) Make sure to "flush" the queue every given interval.
          ;; Given in milliseconds. If not given, submitted requests are
@@ -126,7 +125,7 @@ you from the hassle.
 ;;; Being auto-closeable, grouper can be used with with-open macro
 (time
   (with-open [g (grouper/start! db-insert
-                                :queue 10000
+                                :capacity 10000
                                 :interval 100)]
     (dotimes [n 1000]
       (grouper/submit! g n))))
