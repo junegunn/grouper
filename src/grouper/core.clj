@@ -115,9 +115,10 @@
   Callback functions can be optionally specified.
     :callback
     :errback"
-  [grouper elem & {:keys [callback errback]
-                   :or   {callback identity
-                          errback  identity}}]
+  [^Grouper grouper
+   elem & {:keys [callback errback]
+           :or   {callback identity
+                  errback  identity}}]
   {:pre [(fn? callback) (fn? errback)]}
   (let [req {:object   elem     :promise (promise)
              :callback callback :errback errback}]
@@ -125,5 +126,5 @@
 
 (defn shutdown!
   "Closes Grouper and waits for the completion of the submitted tasks."
-  [grouper]
+  [^Grouper grouper]
   (.close grouper))
