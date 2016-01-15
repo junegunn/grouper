@@ -56,7 +56,7 @@
       (Thread/sleep 10))
     (when pool
       (.shutdown pool)
-      (.awaitTermination pool 60 TimeUnit/SECONDS))))
+      (.awaitTermination pool Long/MAX_VALUE TimeUnit/SECONDS))))
 
 (defn- body-fn
   [proc-fn requests]
