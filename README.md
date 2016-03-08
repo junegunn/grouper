@@ -135,10 +135,6 @@ you from the hassle.
 
 - [proco](https://github.com/junegunn/proco)
 
-## TODO
-
-- A way to relinquish control on blocking I/O (*a la coroutine*)
-
 ## License
 
 - [MIT License](LICENSE). Copyright (c) 2016 Junegunn Choi.
