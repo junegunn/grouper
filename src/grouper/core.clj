@@ -109,7 +109,7 @@
                      (.drainTo queue requests)
                      (when-not (.isEmpty requests)
                        (let [body (body-fn proc-fn requests)]
-                         (if pool (.submit pool body) (body))))))]
+                         (if pool (.submit pool ^Callable body) (body))))))]
     (.start grouper thread)))
 
 (defn submit!
