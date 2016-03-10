@@ -1,6 +1,12 @@
 (ns grouper.core
   "Provides asynchronous batch processing facility."
-  (:import [java.util.concurrent ArrayBlockingQueue ExecutorService TimeUnit]
+  (:import [java.util.concurrent
+            ArrayBlockingQueue
+            ExecutorService
+            SynchronousQueue
+            ThreadPoolExecutor
+            ThreadPoolExecutor$CallerRunsPolicy
+            TimeUnit]
            java.util.ArrayList))
 
 (deftype Request
@@ -25,7 +31,7 @@
 
   IGrouper
   (start [this body]
-    (set! thread (Thread. body))
+    (set! thread (Thread. ^Runnable body))
     (.start thread)
     this)
   (isRunning [this] running?)
@@ -75,6 +81,13 @@
           ((.errback request) e)
           (deliver (.promise request) e))))))
 
+(defn- ^ExecutorService create-thread-pool
+  [size]
+  (ThreadPoolExecutor.
+    size size Long/MAX_VALUE TimeUnit/SECONDS
+    (SynchronousQueue.)
+    (ThreadPoolExecutor$CallerRunsPolicy.)))
+
 (defn start!
   "Creates Grouper and starts the dispatcher thread.
 
@@ -97,9 +110,9 @@
   (let [{:keys  [capacity interval pool]} options
         queue   (ArrayBlockingQueue. capacity)
         pool    (if (integer? pool)
-                  (java.util.concurrent.Executors/newFixedThreadPool pool)
+                  (create-thread-pool pool)
                   pool)
-        grouper (->Grouper queue pool nil false true)
+        grouper ^Grouper (->Grouper queue pool nil false true)
         thread  #(while (or (.isRunning grouper)
                             ;; Should not terminate until queue is empty
                             (not (.isEmpty queue)))
@@ -109,7 +122,9 @@
                      (.drainTo queue requests)
                      (when-not (.isEmpty requests)
                        (let [body (body-fn proc-fn requests)]
-                         (if pool (.submit pool ^Callable body) (body))))))]
+                         (if pool
+                           (.submit ^ExecutorService pool ^Callable body)
+                           (body))))))]
     (.start grouper thread)))
 
 (defn submit!
