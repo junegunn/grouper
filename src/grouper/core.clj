@@ -88,7 +88,7 @@
     (SynchronousQueue.)
     (ThreadPoolExecutor$CallerRunsPolicy.)))
 
-(defn start!
+(defn ^Grouper start!
   "Creates Grouper and starts the dispatcher thread.
 
   The provided function should return a collection of return values that
