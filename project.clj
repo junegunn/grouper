@@ -1,4 +1,4 @@
-(defproject grouper "0.1.0-SNAPSHOT"
+(defproject junegunn/grouper "0.1.0"
   :description "A simple batch processing facility"
   :url "https://github.com/junegunn/grouper"
   :license {:name "MIT"}
