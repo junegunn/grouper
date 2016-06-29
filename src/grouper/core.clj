@@ -4,6 +4,7 @@
             ArrayBlockingQueue
             ExecutorService
             SynchronousQueue
+            ThreadFactory
             ThreadPoolExecutor
             ThreadPoolExecutor$CallerRunsPolicy
             TimeUnit]
@@ -81,12 +82,19 @@
           ((.errback request) e)
           (deliver (.promise request) e))))))
 
-(defn- ^ExecutorService create-thread-pool
-  [size]
-  (ThreadPoolExecutor.
-    size size Long/MAX_VALUE TimeUnit/SECONDS
-    (SynchronousQueue.)
-    (ThreadPoolExecutor$CallerRunsPolicy.)))
+(let [pool-count (atom 0)]
+  (defn- ^ExecutorService create-thread-pool
+    [size]
+    (ThreadPoolExecutor.
+      size size Long/MAX_VALUE TimeUnit/SECONDS
+      (SynchronousQueue.)
+      (let [pool-num     (swap! pool-count inc)
+            thread-count (atom 0)]
+        (reify ThreadFactory
+          (newThread [this runnable]
+            (Thread. runnable (format "grouper-pool-%d-%d"
+                                      pool-num (swap! thread-count inc))))))
+      (ThreadPoolExecutor$CallerRunsPolicy.))))
 
 (defn ^Grouper start!
   "Creates Grouper and starts the dispatcher thread.
