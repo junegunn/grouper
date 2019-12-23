@@ -6,7 +6,7 @@ grouper
 *grouper* is a simple clojure library that provides an asynchronous batch
 processing facility that is crucial for building high-throughput applications.
 
-[![Clojars Project](http://clojars.org/junegunn/grouper/latest-version.svg)](http://clojars.org/grouper)
+[![Clojars Project](http://clojars.org/junegunn/grouper/latest-version.svg)](http://clojars.org/junegunn/grouper)
 
 ## Rationale
 
