@@ -118,7 +118,7 @@ you from the hassle.
   (grouper/submit! g n))
 (grouper/shutdown! g)
 
-;;; Trying to submit! after grouper is shutted down will cause RuntimeError
+;;; Trying to submit! after grouper is shut down will cause RuntimeError
 (grouper/submit! g (rand-int 100))
   ; java.lang.RuntimeException: Grouper is closed
 
